@@ -1,4 +1,5 @@
 let target, vehicle;
+let vehicles = [];
 let sliderVitesseMaxVehicules;
 
 // la fonction setup est appelée une fois au démarrage du programme par p5.js
@@ -11,12 +12,22 @@ function setup() {
   target = createVector(0, 0);
 
   // on crée un véhicule
-  vehicle = new Vehicle(400, 400);
+  //vehicle = new Vehicle(400, 400);
+
+  // On crée un tableau de véhicules
+  creerVehicules(10);
 
   // "label", min, max, val, pas, posX, posY, couleur, propriété à changer
   createMonSlider("maxSpeed", 1, 50, 10, 1, 10, 0, "white", "maxSpeed");
   createMonSlider("maxForce", 0.05, 4, 0.25, 0.01, 10, 30, "white", "maxForce");
-  
+
+}
+
+function creerVehicules(nbVehicules) {
+  for (let i = 0; i < nbVehicules; i++) {
+    let vehicle = new Vehicle(random(width), random(height));
+    vehicles.push(vehicle);
+  }
 }
 
 function createMonSlider(label, min, max, val, step, x, y, color, prop) {
@@ -25,9 +36,9 @@ function createMonSlider(label, min, max, val, step, x, y, color, prop) {
   // slider les paramètres : Min, Max, Valeur, Pas
   let slider = createSlider(min, max, val, step);
   // on positionne le slider en haut à gauche du canvas
-  slider.position(100, y+17);
+  slider.position(100, y + 17);
   // Label à gauche du slider "maxSpeed"
- labelHTML = createP(label);
+  labelHTML = createP(label);
   // label en blanc
   labelHTML.style('color', 'white');
   // on le positionne en x=10 y = 10
@@ -40,9 +51,11 @@ function createMonSlider(label, min, max, val, step, x, y, color, prop) {
   // le slider
   slider.input(() => {
     labelValue.html(slider.value());
-    vehicle[prop] = slider.value();
+    // On change la propriété de tous les véhicules
+    vehicles.forEach(vehicle => {
+      vehicle[prop] = slider.value();
+    });
   });
-
 }
 
 // la fonction draw est appelée en boucle par p5.js, 60 fois par seconde par défaut
@@ -67,17 +80,30 @@ function draw() {
   // Dessine un cercle de rayon 32px à la position de la souris
   // la couleur de remplissage est rouge car on a appelé fill(255, 0, 0) plus haut
   // pas de contours car on a appelé noStroke() plus haut
+  // x, y, diametre (et pas rayon)
   circle(target.x, target.y, 32);
 
-
+  vehicles.forEach((vehicle) => {
     // je déplace et dessine le véhicule
     vehicle.applyBehaviors(target);
     vehicle.update();
     // Si le vehicule sort de l'écran
     // on le fait réapparaitre de l'autre côté
     vehicle.edges();
+
+    // Je calcule la distance entre target et la position du véhicule
+    let distance = p5.Vector.dist(target, vehicle.pos);
+    // ou.... distance = target.dist(vehicle.pos);
+    if (distance < vehicle.r + 16) {
+      // collision !
+      // on met le véhicule à une positon aléatoire
+      vehicle.pos.x = random(width);
+      vehicle.pos.y = random(height);
+    }
+
     vehicle.show();
 
-  // TODO: boucle sur le tableau de véhicules
-  // pour chaque véhicule : seek, update, show
+    // TODO: boucle sur le tableau de véhicules
+    // pour chaque véhicule : seek, update, show
+  });
 }

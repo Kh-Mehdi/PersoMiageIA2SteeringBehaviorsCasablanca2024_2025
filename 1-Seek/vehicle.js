@@ -15,8 +15,8 @@ class Vehicle {
   }
 
   applyBehaviors(target) {
+    //let force = this.seek(target);
     let force = this.seek(target);
-    //let force = this.flee(target);
     this.applyForce(force);
   }
   // seek est une méthode qui permet de faire se rapprocher le véhicule de la cible passée en paramètre
@@ -40,7 +40,8 @@ class Vehicle {
   flee(target) {
     // inverse de seek ! REMPLACER LA LIGNE SUIVANTE POUR RENVOYER UNE FORCE INVERSE A CELLE RENVOYEE
     // PAR LE COMPORTEMENT SEEK
-    return createVector(0, 0);
+    let force = this.seek(target).mult(-1);  
+    return force;
   }
 
   // applyForce est une méthode qui permet d'appliquer une force au véhicule
