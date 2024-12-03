@@ -1,122 +1,128 @@
-let vehicle;
-let target;
-let maxSpeedSlider, maxForceSlider;
-
-function setup() {
-  createCanvas(800, 600);
-
-  // Initialisation du véhicule et de la cible
-  vehicle = new Vehicle(width / 2, height / 2);
-  target = new Target(random(width), random(height));
-
-  // Curseur pour maxSpeed
-  maxSpeedSlider = createSlider(1, 20, 10, 1);
-  maxSpeedSlider.position(10, height + 10);
-  createP("Max Speed").position(10, height - 20);
-
-  // Curseur pour maxForce
-  maxForceSlider = createSlider(0.1, 2, 0.25, 0.05);
-  maxForceSlider.position(200, height + 10);
-  createP("Max Force").position(200, height - 20);
-}
-
-function draw() {
-  background(51);
-
-  // Mettre à jour les valeurs maxSpeed et maxForce en fonction des curseurs
-  vehicle.maxSpeed = maxSpeedSlider.value();
-  vehicle.maxForce = maxForceSlider.value();
-
-  // Mise à jour et affichage de la cible
-  target.update();
-  target.show();
-
-  // Mise à jour et affichage du véhicule
-  vehicle.applyBehaviors(target);
-  vehicle.update();
-  vehicle.show();
-
-  // Si le véhicule atteint la cible, on la relocalise
-  if (dist(vehicle.pos.x, vehicle.pos.y, target.pos.x, target.pos.y) < target.r + vehicle.r) {
-    target.relocate();
-  }
-}
-
 class Vehicle {
   constructor(x, y) {
+    // position du véhicule
     this.pos = createVector(x, y);
+    // vitesse du véhicule
     this.vel = createVector(0, 0);
+    // accélération du véhicule
     this.acc = createVector(0, 0);
+    // vitesse maximale du véhicule
     this.maxSpeed = 10;
+    // force maximale appliquée au véhicule
     this.maxForce = 0.25;
+    // rayon du véhicule
     this.r = 16;
   }
 
   applyBehaviors(target) {
-    let seekForce = this.seek(target.pos);
-    this.applyForce(seekForce);
+    //let force = this.seek(target);
+    let force = this.seek(target);
+    this.applyForce(force);
   }
-
+  // seek est une méthode qui permet de faire se rapprocher le véhicule de la cible passée en paramètre
   seek(target) {
-    let desired = p5.Vector.sub(target, this.pos);
-    desired.setMag(this.maxSpeed);
-    let steer = p5.Vector.sub(desired, this.vel);
-    steer.limit(this.maxForce);
-    return steer;
+    // on calcule la direction vers la cible
+    // C'est l'ETAPE 1 (action : se diriger vers une cible)
+    let vitesseSouhaitee = p5.Vector.sub(target, this.pos);
+
+    // Dessous c'est l'ETAPE 2 : le pilotage (comment on se dirige vers la cible)
+    // on limite ce vecteur à la longueur maxSpeed
+    vitesseSouhaitee.setMag(this.maxSpeed);
+
+    // on calcule maintenant force = desiredSpeed - currentSpeed
+    let force = p5.Vector.sub(vitesseSouhaitee, this.vel);
+
+    // et on limite cette force à maxForce
+    force.limit(this.maxForce);
+    return force;
   }
 
+  flee(target) {
+    // inverse de seek ! REMPLACER LA LIGNE SUIVANTE POUR RENVOYER UNE FORCE INVERSE A CELLE RENVOYEE
+    // PAR LE COMPORTEMENT SEEK
+    let force = this.seek(target).mult(-1);  
+    return force;
+  }
+
+  // applyForce est une méthode qui permet d'appliquer une force au véhicule
+  // en fait on additionne le vecteurr force au vecteur accélération
   applyForce(force) {
     this.acc.add(force);
   }
 
   update() {
+    // on ajoute l'accélération à la vitesse. L'accélération est un incrément de vitesse
+    // (accélératiion = dérivée de la vitesse)
     this.vel.add(this.acc);
+    // on contraint la vitesse à la valeur maxSpeed
     this.vel.limit(this.maxSpeed);
+    // on ajoute la vitesse à la position. La vitesse est un incrément de position, 
+    // (la vitesse est la dérivée de la position)
     this.pos.add(this.vel);
+
+    // on remet l'accélération à zéro
     this.acc.set(0, 0);
   }
 
+  // On dessine le véhicule
   show() {
+    // formes fil de fer en blanc
     stroke(255);
+    // épaisseur du trait = 2
     strokeWeight(2);
+
+    // formes pleines en blanc
     fill("blue");
+
+    // sauvegarde du contexte graphique (couleur pleine, fil de fer, épaisseur du trait, 
+    // position et rotation du repère de référence)
     push();
+    // on déplace le repère de référence.
     translate(this.pos.x, this.pos.y);
+    // et on le tourne. heading() renvoie l'angle du vecteur vitesse (c'est l'angle du véhicule)
     rotate(this.vel.heading());
+
+    //circle(0, 0, this.r * 2);
+
+    // Dessin d'un véhicule sous la forme d'un triangle. Comme s'il était droit, avec le 0, 0 en haut à gauche
     triangle(-this.r, -this.r / 2, -this.r, this.r / 2, this.r, 0);
+    // Que fait cette ligne ?
+    //this.edges();
+    
+    // draw velocity vector
+    pop();
+    this.drawVelocityVector();
+  }
+
+  drawVelocityVector() {
+    push();
+    // Dessin du vecteur vitesse
+    // Il part du centre du véhicule et va dans la direction du vecteur vitesse
+    strokeWeight(3);
+    stroke("red");
+    line(this.pos.x, this.pos.y, this.pos.x + this.vel.x * 10, this.pos.y + this.vel.y * 10);
+    // dessine une petite fleche au bout du vecteur vitesse
+    let arrowSize = 5;
+    translate(this.pos.x + this.vel.x * 10, this.pos.y + this.vel.y * 10);
+    rotate(this.vel.heading());
+    translate(-arrowSize / 2, 0);
+    triangle(0, arrowSize / 2, 0, -arrowSize / 2, arrowSize, 0);
     pop();
   }
-
+  
+  // que fait cette méthode ?
+  // elle permet de faire réapparaitre le véhicule de 
+  // l'autre côté du canvas
   edges() {
-    if (this.pos.x > width + this.r) this.pos.x = -this.r;
-    if (this.pos.x < -this.r) this.pos.x = width + this.r;
-    if (this.pos.y > height + this.r) this.pos.y = -this.r;
-    if (this.pos.y < -this.r) this.pos.y = height + this.r;
-  }
-}
-
-class Target extends Vehicle {
-  constructor(x, y) {
-    super(x, y);
-    this.vel = p5.Vector.random2D();
-    this.vel.setMag(random(1, 3));
-    this.r = 16;
-  }
-
-  update() {
-    this.pos.add(this.vel);
-    this.edges();
-  }
-
-  show() {
-    noStroke();
-    fill("red");
-    ellipse(this.pos.x, this.pos.y, this.r * 2);
-  }
-
-  relocate() {
-    this.pos = createVector(random(width), random(height));
-    this.vel = p5.Vector.random2D();
-    this.vel.setMag(random(1, 3));
+    if (this.pos.x > width + this.r) {
+      this.pos.x = -this.r;
+    } else if (this.pos.x < -this.r) {
+      this.pos.x = width + this.r;
+    }
+    if (this.pos.y > height + this.r) {
+      this.pos.y = -this.r;
+    } else if (this.pos.y < -this.r) {
+      this.pos.y = height + this.r;
+    }
   }
 }
