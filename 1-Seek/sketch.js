@@ -1,6 +1,7 @@
 let target, vehicle;
 let vehicles = [];
 let sliderVitesseMaxVehicules;
+let myTarget;
 
 // la fonction setup est appelée une fois au démarrage du programme par p5.js
 function setup() {
@@ -21,6 +22,10 @@ function setup() {
   createMonSlider("maxSpeed", 1, 50, 10, 1, 10, 0, "white", "maxSpeed");
   createMonSlider("maxForce", 0.05, 4, 0.25, 0.01, 10, 30, "white", "maxForce");
 
+  // Je crée une instance de la classe Target
+  // vitesseX, vitesseY, couleur, rayon
+  myTarget = new Target("lightgreen", 50);
+  
 }
 
 function creerVehicules(nbVehicules) {
@@ -83,25 +88,31 @@ function draw() {
   // x, y, diametre (et pas rayon)
   circle(target.x, target.y, 32);
 
-  vehicles.forEach((vehicle) => {
+  vehicles.forEach(vehicle => {
     // je déplace et dessine le véhicule
-    vehicle.applyBehaviors(target);
+    vehicle.applyBehaviors(myTarget.pos);
     vehicle.update();
     // Si le vehicule sort de l'écran
     // on le fait réapparaitre de l'autre côté
     vehicle.edges();
 
     // Je calcule la distance entre target et la position du véhicule
-    let distance = p5.Vector.dist(target, vehicle.pos);
+    let distance = p5.Vector.dist(myTarget.pos, vehicle.pos);
     // ou.... distance = target.dist(vehicle.pos);
     if (distance < vehicle.r + 16) {
       // collision !
       // on met le véhicule à une positon aléatoire
-      vehicle.pos.x = random(width);
-      vehicle.pos.y = random(height);
+      //vehicle.pos.x = random(width);
+      //vehicle.pos.y = random(height);
+      myTarget.deplaceToiChangeVitesse();
     }
 
     vehicle.show();
+
+    // Pour myTarget
+    myTarget.update();
+    myTarget.edges();
+    myTarget.show();
 
     // TODO: boucle sur le tableau de véhicules
     // pour chaque véhicule : seek, update, show
